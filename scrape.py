@@ -9,13 +9,14 @@ check the LFS URL (lfs) and the regular expression search (regex).
 import urllib2
 import re
 
-#Link to Linux From Scratch's required packages page
+#Links to Linux From Scratch's required packages & patches
 lfs = 'http://www.linuxfromscratch.org/lfs/view/stable/chapter03/packages.html'
+ptch = 'http://www.linuxfromscratch.org/lfs/view/stable/chapter03/patches.html'
 
-def get_package_urls():
-    '''Returns a list of package URLs from LSF website'''
+def get_package_urls(url):
+    '''Returns a list of package & patch URLs from LSF website'''
 
-    packages = urllib2.urlopen(lfs).read()
+    packages = urllib2.urlopen(url).read()
     
     #The following regular expression finds the download-URLs.
     #If this script fails, it's most likely a layout-change on the LFS website.
@@ -54,8 +55,8 @@ def download_package(url):
     package_name = url.split('/')[-1]
     open_url = urllib2.urlopen(url)
     filehandle = open(package_name, 'wb')
-    meta = open_url.info()
-    file_size = int(meta.getheaders("Content-Length")[0])
+    url_info = open_url.info()
+    file_size = int(url_info.getheaders("Content-Length")[0])
     
     print("Downloading: %s %s Bytes" % (package_name, file_size))
     
@@ -76,10 +77,15 @@ def download_package(url):
         print status,
     filehandle.close()
     
-def main():
-    packages = get_package_urls()
+def iterate(lfs_url):
+    #Which URL are we processing? Packages or patches?
+    lfs_type = lfs_url.split('/')[-1][:-5]
+    packages = get_package_urls(lfs_url)
+    
     tested = []
     not_working = []
+    
+    #Is the d/l URL valid?
     for url in packages:
         working = test_if_available(url)
         if working == True:
@@ -88,19 +94,27 @@ def main():
             not_working.append(url)
     
     no_of_packs = len(packages)
-    available = len(tested)
-    print("\nThere are %d of %d packages available." % (available, no_of_packs)
+    no_available = len(tested)
+    
+    #How many packages are available? E.g. 62/62
+    avail_string = "\nThere are %d of %d %s available."
+    print(avail_string % (no_available, no_of_packs, lfs_type))
+    
+    #Giving details on packages missing
     for url in not_working:
         package_name = url.split('/')[-1]
-        print("The package %s at %s is unavailable!" % (package_name, url)
-    
-    cont = raw_input("Do you wish to continue? (y/n) ")
+        package_string = "The %s %s at %s is unavailable!"
+        print(package_string % (lfs_type[:-1], package_name, url))
+
+    cont = raw_input("Do you wish to continue? (y/n) \n")
     
     if cont == 'y':
         for url in tested:
             download_package(url)
-    else:
-        print("Script aborted.")
+
+def main():
+    iterate(lfs)            # Checking and downloading packages
+    iterate(ptch)           # -"- patches
     
 if __name__ == '__main__':
     main()
