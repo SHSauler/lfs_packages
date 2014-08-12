@@ -16,6 +16,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 '''
 
+#TODO: Catch keyboard interrupt
+
 import urllib2
 import re
 
@@ -23,6 +25,16 @@ import re
 lfs = 'http://www.linuxfromscratch.org/lfs/view/stable/chapter03/packages.html'
 ptch = 'http://www.linuxfromscratch.org/lfs/view/stable/chapter03/patches.html'
 
+
+def test_if_lfs_exists(lfs_url):
+    '''Can we reach the LFS page to scrape the packages?'''
+    lfs_type = lfs_url.split('/')[-1][:-5]
+    try:
+        exist = urllib2.urlopen(lfs_url).read()
+        return 1
+    except urllib2.URLError:
+        print("LFS URL to %s not available." % lfs_type)
+    
 def get_package_urls(url):
     '''Returns a list of package & patch URLs from LSF website'''
 
@@ -59,20 +71,18 @@ def test_if_available(url):
 
 def download_package(url):
     '''partly from PabloG and Bjoern Pollex at:
-    http://stackoverflow.com/questions/22676\
-    /how-do-i-download-a-file-over-http-using-python'''
+    http://stackoverflow.com/a/22776/286994'''
     
     package_name = url.split('/')[-1]
     open_url = urllib2.urlopen(url)
     filehandle = open(package_name, 'wb')
-    url_info = open_url.info()
-    file_size = int(url_info.getheaders("Content-Length")[0])
+    file_size = int(open_url.info()["Content-Length"])
     
-    print("Downloading: %s %s Bytes" % (package_name, file_size))
+    print("Downloading: %s (%d Bytes)" % (package_name, file_size))
     
     file_size_dl = 0
-    #Default block size for Unix filesystems
-    block_sz = 8192
+    #Default block size for Unix filesystems: 8192
+    block_sz = 8*1024
     
     while True:
         buffer = open_url.read(block_sz)
@@ -81,10 +91,11 @@ def download_package(url):
             
         file_size_dl += len(buffer)
         filehandle.write(buffer)
-        stat_string = r"%10d  [%3.2f%%]"
-        status = stat_string % (file_size_dl, file_size_dl * 100. / file_size)
+        stat_string = r"%10d  [%3.1f%%]"
+        percentage = float(file_size_dl * 100) / file_size
+        status = stat_string % (file_size_dl, percentage)
         status = status + chr(8)*(len(status)+1)
-        print status,
+        sys.stdout.write(status)
     filehandle.close()
     
 def iterate(lfs_url):
@@ -121,10 +132,17 @@ def iterate(lfs_url):
     if cont == 'y':
         for url in tested:
             download_package(url)
-
+            
+def download_test():
+    '''Testing d/l function without having to check URLs first'''
+    pass
+    
 def main():
-    iterate(lfs)            # Checking and downloading packages
-    iterate(ptch)           # -"- patches
+    
+    if test_if_lfs_exists(lfs) == 1:
+        iterate(lfs)                 # Checking and downloading packages
+    if test_if_lfs_exists(ptch) == 1:
+        iterate(ptch)                # -"- patches
     
 if __name__ == '__main__':
     main()
