@@ -1,5 +1,5 @@
 #!/usr/bin/env/ python
-'''
+"""
 Scrapes URLs, checks and downloads all packages and patches
 required to build Linux From Scratch. Works with Python 2.7.3.
 
@@ -14,12 +14,13 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-'''
+"""
 
 #TODO: Catch keyboard interrupt
 
 import urllib2
 import re
+import sys
 
 #Links to Linux From Scratch's required packages & patches
 lfs = 'http://www.linuxfromscratch.org/lfs/view/stable/chapter03/packages.html'
@@ -27,7 +28,7 @@ ptch = 'http://www.linuxfromscratch.org/lfs/view/stable/chapter03/patches.html'
 
 
 def test_if_lfs_exists(lfs_url):
-    '''Can we reach the LFS page to scrape the packages?'''
+    """Can we reach the LFS page to scrape the packages?"""
     lfs_type = lfs_url.split('/')[-1][:-5]
     try:
         exist = urllib2.urlopen(lfs_url).read()
@@ -36,7 +37,7 @@ def test_if_lfs_exists(lfs_url):
         print("LFS URL to %s not available." % lfs_type)
     
 def get_package_urls(url):
-    '''Returns a list of package & patch URLs from LSF website'''
+    """Returns a list of package & patch URLs from LSF website"""
 
     packages = urllib2.urlopen(url).read()
     
@@ -47,8 +48,8 @@ def get_package_urls(url):
     return result
 
 def test_if_available(url):
-    '''Testing URLS before download. If some packages are missing, this
-       has to be clearly pointed out.'''
+    """Testing URLS before download. If some packages are missing, this
+       has to be clearly pointed out."""
     
     package_name = url.split('/')[-1]
     try:
@@ -70,8 +71,8 @@ def test_if_available(url):
         return False
 
 def download_package(url):
-    '''partly from PabloG and Bjoern Pollex at:
-    http://stackoverflow.com/a/22776/286994'''
+    """partly from PabloG and Bjoern Pollex at:
+    http://stackoverflow.com/a/22776/286994"""
     
     package_name = url.split('/')[-1]
     open_url = urllib2.urlopen(url)
@@ -96,6 +97,7 @@ def download_package(url):
         status = stat_string % (file_size_dl, percentage)
         status = status + chr(8)*(len(status)+1)
         sys.stdout.write(status)
+    open_url.close()
     filehandle.close()
     
 def iterate(lfs_url):
@@ -134,7 +136,7 @@ def iterate(lfs_url):
             download_package(url)
             
 def download_test():
-    '''Testing d/l function without having to check URLs first'''
+    """Testing d/l function without having to check URLs first"""
     pass
     
 def main():
@@ -146,3 +148,13 @@ def main():
     
 if __name__ == '__main__':
     main()
+
+
+"""
+except KeyboardInterrupt:
+sys.stderr.flush()
+print('\nInterrupted\n')
+
+
+response.code == 200
+"""
